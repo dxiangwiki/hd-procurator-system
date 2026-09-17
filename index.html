@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汉东省人民检察院 · 案件信息查询系统</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%231a4480' d='M12 1l9 4v6c0 5-3.8 9.6-9 12-5.2-2.4-9-7-9-12V5l9-4z'/%3E%3Cpath fill='%23fff' d='M12 5l5 2.2V11c0 3.4-2.3 6.5-5 8-2.7-1.5-5-4.6-5-8V7.2L12 5z'/%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#1a4480; --navy2:#2557a8; --navy3:#12315e;
+  --bg:#eef2f8; --panel:#fff; --line:#d4dde8;
+  --txt:#2b3440; --muted:#5f6b7a; --red:#c0392b; --green:#1e8449; --amber:#b9770e;
+}
+html,body{height:100%}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","SimSun",-apple-system,sans-serif;
+  background:var(--bg); color:var(--txt); font-size:14px;
+}
+button{font-family:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+/* ============ 登录页 ============ */
+#loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--navy3) 0%,var(--navy) 55%,#2b4e8a 100%)}
+.login-card{width:400px;background:var(--panel);border-radius:6px;box-shadow:0 12px 40px rgba(0,20,50,.45);overflow:hidden}
+.login-head{background:var(--navy);color:#fff;text-align:center;padding:26px 20px}
+.login-head .emblem{width:52px;height:52px;margin:0 auto 10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff}
+.login-head h1{font-size:19px;font-weight:600;letter-spacing:2px}
+.login-head p{font-size:12px;margin-top:6px;opacity:.85;letter-spacing:1px}
+.login-body{padding:26px 30px 24px}
+.login-row{margin-bottom:16px}
+.login-row label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+.login-row input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:4px;font-size:14px;outline:none;transition:.15s}
+.login-row input:focus{border-color:var(--navy2);box-shadow:0 0 0 2px rgba(37,87,168,.15)}
+.login-error{height:18px;font-size:12px;color:var(--red);margin-bottom:4px}
+.login-btn{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-size:15px;letter-spacing:4px;transition:.15s}
+.login-btn:hover{background:var(--navy2)}
+.login-btn:disabled{opacity:.6}
+.login-foot{display:flex;justify-content:space-between;font-size:11px;color:#aeb8c6;margin-top:14px}
+.login-foot span{cursor:pointer}
+.login-foot span:hover{color:#fff}
+
+/* ============ 整体布局 ============ */
+#mainPage{display:flex;flex-direction:column;height:100vh}
+.topbar{height:52px;background:var(--navy);color:#fff;display:flex;align-items:center;padding:0 18px;gap:16px;flex-shrink:0}
+.topbar .t1{font-size:16px;font-weight:600;letter-spacing:1px}
+.topbar .t2{font-size:11px;opacity:.8;border-left:1px solid rgba(255,255,255,.35);padding-left:14px;margin-top:2px}
+.topbar .spacer{flex:1}
+.topbar .clock{font-size:13px;font-family:ui-monospace,"Consolas",monospace;padding:6px 10px;background:rgba(0,0,0,.18);border-radius:3px}
+.topbar .user{display:flex;align-items:center;gap:8px;font-size:13px}
+.topbar .user .un{background:#fff;color:var(--navy);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px}
+.topbar .act{padding:7px 12px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:3px;font-size:12px}
+.topbar .act:hover{background:rgba(0,0,0,.3)}
+.body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:200px;background:var(--navy);flex-shrink:0;padding-top:8px;overflow-y:auto}
+.side-group{font-size:11px;color:#9fb4d6;padding:14px 20px 6px;letter-spacing:1px}
+.menu-item{display:flex;align-items:center;gap:9px;padding:12px 20px;color:#d7e2f3;font-size:14px;cursor:pointer;transition:.14s;border-left:3px solid transparent}
+.menu-item svg{width:15px;height:15px;flex-shrink:0}
+.menu-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.menu-item.active{background:rgba(255,255,255,.14);color:#fff;border-left-color:#fff}
+.side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.15);padding:12px 18px;font-size:12px;color:#9fb4d6}
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+.view{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ============ 模块标题 ============ */
+.page-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.page-head h2{font-size:19px;color:var(--navy);border-left:4px solid var(--navy);padding-left:10px;letter-spacing:1px}
+.page-head .sub{font-size:12px;color:var(--muted);margin-top:3px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;box-shadow:0 1px 3px rgba(20,40,80,.05)}
+.panel-head{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.panel-head h3{font-size:14px;color:var(--navy)}
+.panel-head .spacer{flex:1}
+.panel-body{padding:16px 18px}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.toolbar label{font-size:13px;color:var(--muted)}
+input[type=text]{padding:8px 11px;border:1px solid var(--line);border-radius:3px;font-size:14px;outline:none;transition:.15s;color:var(--txt)}
+input[type=text]:focus{border-color:var(--navy2);box-shadow:0 0 0 2px rgba(37,87,168,.12)}
+select{padding:8px 10px;border:1px solid var(--line);border-radius:3px;font-size:13px;color:var(--txt);outline:none;background:#fff}
+.btn{padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:3px;font-size:13px;transition:.14s}
+.btn:hover{background:var(--navy2)}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy2)}
+.btn.ghost:hover{background:#eef3fb}
+.btn.gray{background:#e8edf4;color:#3a4757;border:1px solid #d4dde8}
+.btn.gray:hover{background:#dde5ef}
+.btn.sm{padding:5px 12px;font-size:12px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+
+/* ============ 表格 ============ */
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid var(--line);padding:10px 12px;text-align:center;font-size:13px;white-space:nowrap}
+th{background:#eef3fa;color:var(--navy);font-weight:600}
+tbody tr{transition:.12s}
+tbody tr:hover{background:#f5f8fd}
+td.l,th.l{text-align:left}
+.mono{font-family:"Consolas","Courier New",monospace;font-size:12px}
+.st{display:inline-block;padding:2px 10px;border-radius:2px;font-size:12px}
+.st.run{background:#fdecea;color:var(--red);border:1px solid #f5c6c0}
+.st.trial{background:#eaf5ef;color:var(--green);border:1px solid #b9dcc9}
+.st.review{background:#fdf6e7;color:var(--amber);border:1px solid #ecd9a8}
+.st.info{background:#e8f0fc;color:var(--navy);border:1px solid #c4d5ef}
+
+/* ============ 弹窗 ============ */
+.modal-mask{position:fixed;inset:0;background:rgba(10,24,46,.55);display:flex;align-items:center;justify-content:center;z-index:100;animation:fadeIn .2s}
+.modal{background:#fff;border-radius:4px;box-shadow:0 20px 60px rgba(0,20,50,.35);width:640px;max-width:92vw;max-height:88vh;overflow:auto}
+.modal-head{background:var(--navy);color:#fff;padding:13px 18px;display:flex;align-items:center;gap:8px;font-size:15px}
+.modal-head .close{margin-left:auto;background:none;border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer}
+.modal-body{padding:20px 22px}
+.modal-foot{padding:13px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.doc{padding:6px 8px}
+.doc .dhead{text-align:center;font-size:20px;font-weight:600;letter-spacing:4px;color:var(--navy);margin-bottom:14px;border-bottom:2px solid var(--navy);padding-bottom:10px}
+.doc .drow{display:flex;font-size:14px;line-height:2;margin-bottom:4px}
+.doc .drow .k{width:96px;color:var(--muted);flex-shrink:0}
+.doc .drow .v{flex:1}
+.doc .dline{font-size:14px;line-height:2;text-indent:2em;text-align:justify;color:#333}
+
+/* ============ 出入境 ============ */
+.result-tip{padding:12px 14px;background:#eef5ff;border:1px solid #c4d5ef;color:var(--navy);font-size:13px;margin-bottom:14px;border-left:4px solid var(--navy)}
+.record-item{display:flex;justify-content:space-between;padding:11px 14px;border:1px solid var(--line);border-radius:3px;margin-bottom:8px;font-size:13px}
+.record-item .k{color:var(--muted)}
+.record-item .v{font-weight:600}
+
+/* ============ 监控 ============ */
+.monitor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.cam{position:relative;background:#0d1117;border:1px solid var(--line);border-radius:3px;overflow:hidden;aspect-ratio:16/9}
+.cam.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a5868;gap:8px}
+.cam.placeholder .cico{width:40px;height:40px;border:2px dashed #35414f;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#4a5868}
+.cam .ov{position:absolute;left:8px;bottom:8px;color:#cfe0ff;font-size:12px;background:rgba(0,0,0,.6);padding:3px 8px;border-radius:2px;font-family:"Consolas",monospace}
+.cam .rec{position:absolute;top:8px;right:8px;color:#fff;font-size:11px;background:rgba(192,57,43,.85);padding:2px 8px;border-radius:2px}
+.cam .rec .dot{display:inline-block;width:7px;height:7px;background:#fff;border-radius:50%;margin-right:4px;animation:blink 1.1s infinite}
+@keyframes blink{50%{opacity:.2}}
+.cam-loading{position:absolute;inset:0;background:#0d1117;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#8a9bb0}
+.spinner{width:34px;height:34px;border:3px solid #24303e;border-top-color:#5b8de0;border-radius:50%;animation:rot .9s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ============ 加载遮罩 / 提示 ============ */
+#fullLoading{position:fixed;inset:0;background:#eef2f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:300}
+#fullLoading .spinner{width:44px;height:44px}
+#fullLoading .lt{color:var(--muted);font-size:13px;letter-spacing:2px}
+#toasts{position:fixed;top:16px;right:16px;z-index:400;display:flex;flex-direction:column;gap:8px}
+.toast{background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy2);border-radius:3px;padding:11px 16px;font-size:13px;box-shadow:0 6px 20px rgba(20,40,80,.15);display:flex;align-items:center;gap:8px;animation:slideIn .25s}
+.toast.ok{border-left-color:var(--green)}
+.toast.warn{border-left-color:var(--amber)}
+.toast.err{border-left-color:var(--red)}
+@keyframes slideIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+
+/* ============ 打印样式 ============ */
+@media print{ #mainPage,.topbar,.sidebar,.content{padding:0;overflow:visible} .sidebar,.topbar{display:none} }
+
+@media (max-width:860px){
+  .sidebar{width:56px}
+  .menu-item span{display:none}
+  .menu-item{justify-content:center;padding:12px 0}
+  .monitor-grid{grid-template-columns:1fr}
+  .topbar .t2{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 登录页 ============ -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="emblem">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.4"><path d="M12 2l7 3.2V11c0 4.6-3.2 8.8-7 10.4C8.2 19.8 5 15.6 5 11V5.2L12 2z"/></svg>
+      </div>
+      <h1>案件信息查询系统</h1>
+      <p>汉 东 省 人 民 检 察 院</p>
+    </div>
+    <div class="login-body">
+      <div class="login-row">
+        <label>干警账号</label>
+        <input id="loginUser" type="text" value="houliangping">
+      </div>
+      <div class="login-row">
+        <label>登录密码</label>
+        <input id="loginPwd" type="password" value="123456">
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button class="login-btn" id="loginBtn">登 录</button>
+      <div class="login-foot">
+        <span onclick="toast('请联系本系统管理员 张平','warn')">忘记密码</span>
+        <span onclick="toast('本系统仅限内部专网访问','info')">内网专线</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="mainPage" class="hidden">
+  <div class="topbar">
+    <div class="t1">汉东省人民检察院</div>
+    <div class="t2">案件信息查询系统 · 涉密专网</div>
+    <div class="spacer"></div>
+    <div class="clock" id="clock"></div>
+    <div class="user"><div class="un">侯</div><span>侯亮平 检察官</span></div>
+    <button class="act" onclick="doPrint()">打印</button>
+    <button class="act" onclick="logout()">退出</button>
+  </div>
+  <div class="body">
+    <div class="sidebar">
+      <div class="side-group">综合业务</div>
+      <div class="menu-item active" data-view="cases">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4h11l3 3v13H5z" stroke-linejoin="round"/><path d="M8 9h8M8 13h8M8 17h5" stroke-linecap="round"/></svg>
+        <span>案件卷宗</span>
+      </div>
+      <div class="menu-item" data-view="suspect">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" stroke-linecap="round"/></svg>
+        <span>嫌疑人档案</span>
+      </div>
+      <div class="side-group">侦查办案</div>
+      <div class="menu-item" data-view="exit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M8 11l4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>出入境查询</span>
+      </div>
+      <div class="menu-item" data-view="bank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 9l9-5 9 5"/><path d="M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 21h18M3 18h18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>资金流水</span>
+      </div>
+      <div class="menu-item" data-view="monitor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="14" height="10" rx="1"/><path d="M5 19h8M9 15v4" stroke-linecap="round"/><path d="M18 8v9M22 5v11" stroke-linecap="round"/></svg>
+        <span>监控调阅</span>
+      </div>
+      <div class="side-group">文书管理</div>
+      <div class="menu-item" data-view="documents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 3h9l3 3v15H6z" stroke-linejoin="round"/><path d="M9 10h6M9 13h6M9 16h4" stroke-linecap="round"/></svg>
+        <span>法律文书</span>
+      </div>
+      <div class="side-foot">办案人：侯亮平 · 处室：反贪总局侦查一处</div>
+    </div>
+
+    <div class="content">
+      <!-- ============ 案件卷宗 ============ -->
+      <div class="view" id="view-cases">
+        <div class="page-head"><div><h2>案件卷宗列表</h2><div class="sub">共登记在办案件 8 件 · 点击查看卷宗详情</div></div></div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>在办案件</h3>
+            <div class="spacer"></div>
+            <div class="toolbar">
+              <input type="text" id="caseSearch" placeholder="案件编号 / 嫌疑人姓名">
+              <button class="btn sm ghost" onclick="toast('已按条件检索案件','ok')">检索</button>
+              <button class="btn sm gray" onclick="resetCaseSearch()">重置</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table>
+              <colgroup><col style="width:18%"><col style="width:30%"><col style="width:12%"><col style="width:12%"><col style="width:12%"><col style="width:16%"></colgroup>
+              <thead><tr><th>案件编号</th><th class="l">案件名称</th><th>主要嫌疑人</th><th>案件阶段</th><th>承办人</th><th>操作</th></tr></thead>
+              <tbody id="caseBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 嫌疑人档案 ============ -->
+      <div class="view hidden" id="view-suspect">
+        <div class="page-head"><div><h2>嫌疑人档案</h2><div class="sub">在案嫌疑人信息查询</div></div></div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>档案检索</h3>
+            <div class="spacer"></div>
+            <div class="toolbar">
+              <input type="text" id="suspectInput" value="丁义珍">
+              <button class="btn" onclick="searchSuspect()">查询档案</button>
+            </div>
+          </div>
+          <div class="panel-body" id="suspectResult"></div>
+        </div>
+      </div>
+
+      <!-- ============ 出入境 ============ -->
+      <div class="view hidden" id="view-exit">
+        <div class="page-head"><div><h2>出入境记录查询</h2><div class="sub">公安部出入境管理信息系统 · 联查</div></div></div>
+        <div class="panel">
+          <div class="panel-head"><h3>人员出入境信息</h3><div class="spacer"></div><button class="btn sm gray" onclick="clearExit()">清空</button></div>
+          <div class="panel-body">
+            <div class="toolbar" style="margin-bottom:16px">
+              <label>证件号码</label>
+              <input type="text" id="exitId" value="4301xxxxxxxx0215" class="mono" style="width:180px">
+              <label>姓名</label>
+              <input type="text" id="exitName" value="丁义珍" style="width:130px">
+              <button class="btn" onclick="searchExit()">查询</button>
+              <button class="btn gray" onclick="loadExitLoading()">模拟加载</button>
+            </div>
+            <div id="exitLoading" class="hidden" style="padding:30px;text-align:center;color:var(--muted)">
+              <div class="spinner" style="margin:0 auto 12px"></div><div>正在联查公安部出入境系统…</div>
+            </div>
+            <div id="exitResult"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 资金流水 ============ -->
+      <div class="view hidden" id="view-bank">
+        <div class="page-head"><div><h2>涉案资金流水</h2><div class="sub">涉案账户交易记录 · 冻结状态实时显示</div></div></div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>账户资金交易明细</h3>
+            <div class="spacer"></div>
+            <span class="st info">账户状态：已冻结</span>
+          </div>
+          <div class="panel-body">
+            <div class="toolbar" style="margin-bottom:16px">
+              <label>账户户名</label><input type="text" id="bankName" value="丁义珍" style="width:120px">
+              <label>开户行</label><input type="text" id="bankOrg" value="汉东商业银行 京州分行" style="width:200px">
+              <button class="btn" onclick="toast('流水已刷新，共 14 笔交易','ok')">查询流水</button>
+            </div>
+            <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">账户：<span class="mono">6222 02 19 0000 **** 8891</span> · 交易时段：2016-11 至 2017-03</div>
+            <table>
+              <colgroup><col style="width:16%"><col style="width:14%"><col style="width:18%"><col style="width:18%"><col style="width:22%"><col style="width:12%"></colgroup>
+              <thead><tr><th>交易时间</th><th>交易金额</th><th class="l">对方账户</th><th class="l">对方户名</th><th class="l">交易用途</th><th>方向</th></tr></thead>
+              <tbody id="bankBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 监控调阅 ============ -->
+      <div class="view hidden" id="view-monitor">
+        <div class="page-head"><div><h2>公共场所监控调阅</h2><div class="sub">调取案发时段公共监控录像</div></div></div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>监控点位列表</h3>
+            <div class="spacer"></div>
+            <div class="toolbar">
+              <select id="camTime">
+                <option>2017-03-01 21:00 — 23:00</option>
+                <option>2017-03-01 20:00 — 22:00</option>
+                <option>2017-02-28 全天</option>
+              </select>
+              <button class="btn" onclick="loadAllCams()">批量调取</button>
+              <button class="btn gray" onclick="toast('已生成《调取证据通知书》','ok')">调取文书</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="monitor-grid" id="camGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 法律文书 ============ -->
+      <div class="view hidden" id="view-documents">
+        <div class="page-head"><div><h2>法律文书</h2><div class="sub">常用办案文书模板</div></div></div>
+        <div class="panel">
+          <div class="panel-head"><h3>文书列表</h3></div>
+          <div class="panel-body">
+            <table>
+              <colgroup><col style="width:38%"><col style="width:18%"><col style="width:16%"><col style="width:14%"><col style="width:14%"></colgroup>
+              <thead><tr><th class="l">文书名称</th><th>文书字号</th><th>关联案件</th><th>拟制时间</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td class="l">批准逮捕决定书</td><td class="mono">汉检批捕〔2017〕4号</td><td>光明峰项目贪腐案</td><td>2017-03-02</td><td><button class="btn sm ghost" onclick="openDoc('批准逮捕决定书')">查看</button></td></tr>
+                <tr><td class="l">拘留证</td><td class="mono">汉检拘字〔2017〕12号</td><td>大风厂股权纠纷案</td><td>2017-02-28</td><td><button class="btn sm ghost" onclick="openDoc('拘留证')">查看</button></td></tr>
+                <tr><td class="l">调取证据通知书</td><td class="mono">汉检调证〔2017〕8号</td><td>山水集团违规案</td><td>2017-03-01</td><td><button class="btn sm ghost" onclick="openDoc('调取证据通知书')">查看</button></td></tr>
+                <tr><td class="l">立案决定书</td><td class="mono">汉检立字〔2017〕6号</td><td>光明峰项目贪腐案</td><td>2017-02-26</td><td><button class="btn sm ghost" onclick="openDoc('立案决定书')">查看</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 弹窗 ============ -->
+<div id="modalRoot"></div>
+<!-- ============ 提示 ============ -->
+<div id="toasts"></div>
+<!-- ============ 全屏加载 ============ -->
+<div id="fullLoading" class="hidden"><div class="spinner"></div><div class="lt" id="loadText">正在登录系统…</div></div>
+
+<script>
+/* ================= 数据 ================= */
+const CASES=[
+  ["汉检诉〔2017〕12号","光明峰项目贪腐案","丁义珍","run","侯亮平"],
+  ["汉检诉〔2017〕11号","大风厂股权纠纷案","蔡成功","review","陆亦可"],
+  ["汉检诉〔2017〕09号","山水集团土地违规案","高小琴","run","侯亮平"],
+  ["汉检诉〔2017〕05号","京州城建项目受贿案","赵汉生","trial","林华华"],
+  ["汉检诉〔2016〕31号","汉东省电力系统窝案","赵立春","trial","侯亮平"],
+  ["汉检诉〔2016〕22号","光明区系列贪腐案","陈海","trial","陈海"]
+];
+const STAGE={run:'<span class="st run">侦查中</span>',review:'<span class="st review">审查起诉</span>',trial:'<span class="st trial">提起公诉</span>'};
+
+const SUSPECT={
+  name:"丁义珍",sex:"男",age:57,birth:"1959年02月",idno:"4301**********0215",
+  unit:"京州市副市长 · 光明峰项目总指挥",
+  charge:"涉嫌受贿罪、挪用公款罪、滥用职权罪",
+  status:"境外在逃",wanted:"已发布红色通缉令",
+  desc:"2017年3月1日，市检察院接到实名举报后对丁义珍涉嫌受贿问题立案侦查。当晚，丁义珍利用出境便利潜逃境外。检察机关依法对其批准逮捕，并启动国际追逃程序。"
+};
+
+const EXIT_REC={
+  name:"丁义珍",passport:"E2 0*****18",depart:"2017-03-01 22:40",port:"京州国际机场 T3",
+  dest:"美国 洛杉矶",flight:"UA 0088",arrive:"2017-03-02 08:15",channel:"VIP 出境通道",
+  remark:"持旅游签证出境，未登记返程信息"
+};
+
+const BANKS=[
+  ["2017-02-10 14:22","¥ 4,500,000","6222 88 0000 **** 3317","境外匿名账户","项目合作款","转出"],
+  ["2017-02-08 09:15","¥ 2,100,000","6225 77 0000 **** 4402","私人账户 高X","好处费","转出"],
+  ["2017-01-20 16:40","¥ 1,800,000","6222 33 0000 **** 5518","京州城建公司","工程款回扣","转出"],
+  ["2016-12-05 11:30","¥ 3,600,000","6222 88 0000 **** 3317","境外匿名账户","避税资金","转出"],
+  ["2016-11-18 10:02","¥ 950,000","6225 19 0000 **** 8821","山水集团","项目转让金","转入"]
+];
+
+const CAMS=[
+  {id:"JC01",name:"京州机场 · T3出境大厅",time:"2017-03-01 22:15",desc:"丁义珍经VIP通道通过安检"},
+  {id:"JC02",name:"京州机场 · 国际出发口",time:"2017-03-01 22:28",desc:"目标进入登机口，乘 UA88 离境"},
+  {id:"JC03",name:"京州国际机场 · 停车场",time:"2017-03-01 22:05",desc:"黑色奥迪驶离，疑似送机车辆"},
+  {id:"JC04",name:"京州市委机关 · 侧门",time:"2017-03-01 21:40",desc:"目标离开机关，乘车前往机场"}
+];
+
+/* ================= 通用 ================= */
+const $=id=>document.getElementById(id);
+function toast(msg,type=''){
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  const ic={ok:'#1e8449',warn:'#b9770e',err:'#c0392b'}[type]||'#2557a8';
+  t.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="'+ic+'" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>'+msg;
+  $('toasts').appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='.4s'},2600);
+  setTimeout(()=>t.remove(),3100);
+}
+function fullLoading(show,text){$('fullLoading').classList.toggle('hidden',!show);if(text)$('loadText').textContent=text;}
+
+/* ================= 时钟 ================= */
+setInterval(()=>{const d=new Date();const p=n=>('0'+n).slice(-2);$('clock').textContent=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;},1000);
+
+/* ================= 登录 ================= */
+$('loginBtn').onclick=()=>{
+  const u=$('loginUser').value.trim(),p=$('loginPwd').value;
+  if(!u||!p){$('loginError').textContent='请输入账号和密码';return;}
+  $('loginError').textContent='';
+  $('loginBtn').disabled=true;$('loginBtn').textContent='验证中…';
+  setTimeout(()=>{
+    $('loginPage').classList.add('hidden');
+    $('mainPage').classList.remove('hidden');
+    $('loginBtn').disabled=false;$('loginBtn').textContent='登 录';
+    toast('登录成功 · 欢迎，侯亮平 检察官','ok');
+  },800);
+};
+['loginUser','loginPwd'].forEach(id=>{$(id).addEventListener('keydown',e=>{if(e.key==='Enter')$('loginBtn').click()})});
+function logout(){toast('已安全退出系统','info');setTimeout(()=>{$('mainPage').classList.add('hidden');$('loginPage').classList.remove('hidden')},500);}
+function doPrint(){toast('已生成打印预览，请选择打印机','info');}
+
+/* ================= 菜单切换 ================= */
+const VIEWS=['cases','suspect','exit','bank','monitor','documents'];
+document.querySelectorAll('.menu-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    const v=item.dataset.view;
+    document.querySelectorAll('.menu-item').forEach(n=>n.classList.remove('active'));
+    item.classList.add('active');
+    VIEWS.forEach(x=>$('view-'+x).classList.add('hidden'));
+    $('view-'+v).classList.remove('hidden');
+  });
+});
+
+/* ================= 案件卷宗 ================= */
+function renderCases(){
+  const tb=$('caseBody');tb.innerHTML='';
+  CASES.forEach(c=>{
+    tb.insertAdjacentHTML('beforeend',
+      `<tr><td class="mono">${c[0]}</td><td class="l" style="font-weight:500">${c[1]}</td><td>${c[2]}</td><td>${STAGE[c[3]]}</td><td>${c[4]}</td><td><button class="btn sm ghost" onclick="openCase('${c[0]}','${c[1]}','${c[2]}')">查看卷宗</button></td></tr>`);
+  });
+}
+$('caseSearch').addEventListener('input',()=>{
+  const q=$('caseSearch').value.trim();
+  document.querySelectorAll('#caseBody tr').forEach(tr=>{
+    tr.style.display=tr.textContent.includes(q)?'':'none';
+  });
+});
+function resetCaseSearch(){$('caseSearch').value='';renderCases();}
+
+function openCase(id,name,suspect){
+  const isDing=suspect==='丁义珍';
+  const body=isDing?`
+    <div class="doc">
+      <div class="dhead">立 案 决 定 书</div>
+      <div class="drow"><div class="k">案 号</div><div class="v mono">${id}</div></div>
+      <div class="drow"><div class="k">案件名称</div><div class="v">${name}</div></div>
+      <div class="drow"><div class="k">犯罪嫌疑人</div><div class="v">${suspect}，男，57岁，曾任京州市副市长</div></div>
+      <div class="drow"><div class="k">涉嫌罪名</div><div class="v">受贿罪、挪用公款罪、滥用职权罪</div></div>
+      <div class="drow"><div class="k">案件阶段</div><div class="v">${STAGE.run}</div></div>
+      <div class="drow"><div class="k">承办人</div><div class="v">侯亮平</div></div>
+      <div class="dline" style="margin-top:10px">经审查，丁义珍在担任京州市副市长、光明峰项目总指挥期间，利用职务便利为他人谋取利益，非法收受巨额财物，涉嫌受贿犯罪。2017年3月1日接群众实名举报后，本院依法立案侦查。犯罪嫌疑人于当日潜逃境外，本院已依法对其决定逮捕，并启动国际追逃程序。</div>
+      <div style="text-align:right;margin-top:14px">办案人：侯亮平<br>日期：2017年03月02日</div>
+    </div>`:`
+    <div class="doc">
+      <div class="dhead">案 件 概 况</div>
+      <div class="drow"><div class="k">案 号</div><div class="v mono">${id}</div></div>
+      <div class="drow"><div class="k">案件名称</div><div class="v">${name}</div></div>
+      <div class="drow"><div class="k">主要嫌疑人</div><div class="v">${suspect}</div></div>
+      <div class="drow"><div class="k">案件阶段</div><div class="v">${STAGE.run}</div></div>
+      <div class="dline" style="margin-top:10px">该案正在依法办理中，具体案情涉密，仅限承办人及授权人员查看。</div>
+    </div>`;
+  showModal('案件卷宗 · '+name,body,[
+    {text:'打印卷宗',cls:'ghost',fn:()=>toast('已加入打印队列','ok')},
+    {text:'关闭',cls:'navy',fn:null}
+  ]);
+}
+
+/* ================= 嫌疑人档案 ================= */
+function searchSuspect(){
+  const n=$('suspectInput').value.trim()||'丁义珍';
+  $('suspectResult').innerHTML=`
+    <div class="result-tip">查询到 1 条匹配档案 · 姓名为“${n}”</div>
+    <div class="record-item"><span class="k">姓 名</span><span class="v">${SUSPECT.name}</span></div>
+    <div class="record-item"><span class="k">性别 / 年龄</span><span class="v">${SUSPECT.sex} / ${SUSPECT.age}岁</span></div>
+    <div class="record-item"><span class="k">出生日期</span><span class="v">${SUSPECT.birth}</span></div>
+    <div class="record-item"><span class="k">证件号码</span><span class="v mono">${SUSPECT.idno}</span></div>
+    <div class="record-item"><span class="k">原任职务</span><span class="v">${SUSPECT.unit}</span></div>
+    <div class="record-item"><span class="k">涉嫌罪名</span><span class="v">${SUSPECT.charge}</span></div>
+    <div class="record-item"><span class="k">在案状态</span><span class="v">${SUSPECT.status} · ${SUSPECT.wanted}</span></div>
+    <div class="doc" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+      <div class="dline">${SUSPECT.desc}</div>
+    </div>
+    <div style="margin-top:14px;text-align:right"><button class="btn ghost" onclick="toast('已生成《通缉令》调阅单','ok')">调阅通缉令</button></div>`;
+}
+
+/* ================= 出入境 ================= */
+function loadExitLoading(){
+  $('exitLoading').classList.remove('hidden');$('exitResult').innerHTML='';
+  setTimeout(()=>{$('exitLoading').classList.add('hidden');renderExitResult()},1400);
+}
+function searchExit(){loadExitLoading();toast('正在联查公安部出入境系统…','info');}
+function clearExit(){$('exitResult').innerHTML='';}
+function renderExitResult(){
+  $('exitResult').innerHTML=`
+    <div class="result-tip">出入境联查完成 · 命中 1 条出境记录（姓名：${EXIT_REC.name}）</div>
+    <table style="margin-bottom:14px">
+      <colgroup><col style="width:16%"><col style="width:16%"><col style="width:18%"><col style="width:18%"><col style="width:16%"><col style="width:16%"></colgroup>
+      <thead><tr><th>姓名</th><th>证件号码</th><th>出境时间</th><th>出境口岸</th><th>目的地</th><th>航班号</th></tr></thead>
+      <tbody>
+        <tr><td>${EXIT_REC.name}</td><td class="mono">${EXIT_REC.passport}</td><td>${EXIT_REC.depart}</td><td>${EXIT_REC.port}</td><td>${EXIT_REC.dest}</td><td class="mono">${EXIT_REC.flight}</td></tr>
+      </tbody>
+    </table>
+    <div class="record-item"><span class="k">出境通道</span><span class="v">${EXIT_REC.channel}</span></div>
+    <div class="record-item"><span class="k">预计抵达</span><span class="v">${EXIT_REC.arrive}</span></div>
+    <div class="record-item"><span class="k">备注</span><span class="v">${EXIT_REC.remark}</span></div>
+    <div style="margin-top:14px;text-align:right">
+      <button class="btn gray" onclick="toast('已申请调取登机牌及安检影像','ok')">调取影像</button>
+      <button class="btn" onclick="toast('已生成《出入境记录查询结果》','ok')">存卷归档</button>
+    </div>`;
+}
+
+/* ================= 资金流水 ================= */
+function renderBanks(){
+  const tb=$('bankBody');tb.innerHTML='';
+  BANKS.forEach(b=>{
+    const out=b[5]==='转出';
+    tb.insertAdjacentHTML('beforeend',
+      `<tr><td class="mono">${b[0]}</td><td style="color:${out?'var(--red)':'var(--green)'};font-weight:600">${b[1]}</td><td class="l mono">${b[2]}</td><td class="l">${b[3]}</td><td class="l">${b[4]}</td><td><span class="st ${out?'run':'trial'}">${b[5]}</span></td></tr>`);
+  });
+}
+
+/* ================= 监控 ================= */
+function renderCams(loading){
+  const grid=$('camGrid');
+  grid.innerHTML=CAMS.map((c,i)=>`
+    <div class="cam" id="cam-${c.id}" onclick="loadCam('${c.id}')">
+      ${loading?'<div class="cam-loading"><div class="spinner"></div><div>正在调取监控画面…</div></div>':`
+        <div class="cam-loading" style="color:#566375">
+          <div class="cico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="13" height="9" rx="1"/><path d="M5 19h8M9 15v4" stroke-linecap="round"/></svg></div>
+          <div>监控 ${c.id} · ${c.name}</div>
+          <div style="font-size:12px;color:#3c4757">点击画面加载录像</div>
+        </div>
+        <div class="ov">${c.id} · ${c.name}</div>`}
+    </div>`).join('');
+  if(!loading)$('camGrid').onclick=null;
+}
+function loadCam(id){
+  const el=$('cam-'+id);if(!el)return;
+  const c=CAMS.find(x=>x.id===id);
+  el.innerHTML=`
+    <div class="cam-loading"><div class="spinner"></div><div>正在调取监控画面…</div></div>`;
+  setTimeout(()=>{
+    el.innerHTML=`
+      <svg viewBox="0 0 400 225" style="width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="225" fill="#0d1117"/>
+        <rect x="0" y="0" width="400" height="225" fill="#11161d" opacity=".9"/>
+        <ellipse cx="300" cy="150" rx="120" ry="90" fill="none" stroke="#1f2c3a" stroke-width="1"/>
+        <ellipse cx="300" cy="150" rx="200" ry="150" fill="none" stroke="#1a2532" stroke-width="1"/>
+        <path d="M60 60 L120 60 L110 190 L40 190 Z" fill="#1b2634" opacity=".8"/>
+        <path d="M120 90 L200 90 L185 170 L120 170 Z" fill="#16202c" opacity=".7"/>
+        <rect x="60" y="55" width="70" height="8" fill="#24303e"/>
+        <rect x="80" y="120" width="6" height="50" fill="#26313f"/>
+        <circle cx="150" cy="185" r="14" fill="none" stroke="#2c3948" stroke-width="2"/>
+        <circle cx="150" cy="180" r="6" fill="#2c3948"/>
+        <rect x="250" y="80" width="16" height="60" fill="#1f2a37"/>
+        <circle cx="258" cy="130" r="8" fill="none" stroke="#2c3948" stroke-width="2"/>
+        <rect x="0" y="0" width="400" height="225" fill="url(#scan)" opacity=".35"/>
+        <defs><linearGradient id="scan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="transparent"/><stop offset=".5" stop-color="#3a6bb5" stop-opacity=".18"/><stop offset="1" stop-color="transparent"/></linearGradient></defs>
+      </svg>
+      <div class="rec"><span class="dot"></span>REC</div>
+      <div class="ov">${c.id} · ${c.name} · ${c.time}</div>`;
+    toast('已加载监控 '+c.id,'ok');
+  },1200);
+}
+function loadAllCams(){renderCams(true);setTimeout(()=>renderCams(false),900);toast('已调取 '+CAMS.length+' 路监控录像','ok');}
+
+/* ================= 文书弹窗 ================= */
+function showModal(title,body,actions){
+  const root=$('modalRoot');
+  root.innerHTML=`
+    <div class="modal-mask">
+      <div class="modal">
+        <div class="modal-head"><span>${title}</span><button class="close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">${body}</div>
+        <div class="modal-foot">${actions.map((a,i)=>`<button class="btn ${a.cls}" onclick="modalAction(${i})">${a.text}</button>`).join('')}</div>
+      </div>
+    </div>`;
+  window._actions=actions;
+}
+function modalAction(i){const a=window._actions[i];if(a&&a.fn)a.fn();closeModal();}
+function closeModal(){$('modalRoot').innerHTML='';}
+$('modalRoot').addEventListener('click',e=>{if(e.target.classList.contains('modal-mask'))closeModal()});
+
+function openDoc(name){
+  showModal(name,`
+    <div class="doc">
+      <div class="dhead">${name}</div>
+      <div class="drow"><div class="k">文书字号</div><div class="v mono">${name==='批准逮捕决定书'?'汉检批捕〔2017〕4号':name==='拘留证'?'汉检拘字〔2017〕12号':name==='调取证据通知书'?'汉检调证〔2017〕8号':'汉检立字〔2017〕6号'}</div></div>
+      <div class="drow"><div class="k">受文单位</div><div class="v">汉东省京州市公安局</div></div>
+      <div class="dline" style="margin-top:12px">根据《中华人民共和国刑事诉讼法》相关规定，现通知贵局协助执行本决定。请于收到本文书后依法办理相关手续，并将执行情况书面回执本院。</div>
+      <div style="text-align:right;margin-top:16px">汉东省人民检察院<br>2017年03月02日</div>
+    </div>`, [
+    {text:'打印',cls:'ghost',fn:()=>toast('已加入打印队列','ok')},
+    {text:'关闭',cls:'navy',fn:null}
+  ]);
+}
+
+/* ================= 启动 ================= */
+window.addEventListener('load',()=>{
+  setTimeout(()=>{fullLoading(false)},1400);
+  renderCases();renderBanks();renderCams(false);
+});
+</script>
+</body>
+</html>
